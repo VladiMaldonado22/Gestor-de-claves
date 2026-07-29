@@ -5,7 +5,8 @@ let db;
 // Variables de control de bloqueo
 let intentosFallidos = 0;
 let tiempoBloqueoActivo = false;
-let nivelBloqueo = 1; // 1 = 30seg, 2 = 5min
+let nivelBloqueo = 1; 
+let idCredencialAEliminar = null;
 
 // Variables de Interfaz
 const pantallaRegistro = document.getElementById('pantalla-registro');
@@ -17,8 +18,9 @@ const contenedorCampos = document.getElementById('contenedor-campos-dinamicos');
 const formCredencial = document.getElementById('formulario-credencial');
 
 document.addEventListener('DOMContentLoaded', () => {
-    initBaseDatos(); // Primero levantamos la base de datos de manera ordenada
-    initModoOscuroClaro(); // Inicializamos el botón de cambio de tema
+    initBaseDatos(); 
+    initModoOscuroClaro();
+    initBotonesBorrarPersonalizado();
 });
 
 function initBaseDatos() {
@@ -174,7 +176,7 @@ function configurarEventosPrincipales() {
 
         let camposExtras = [];
         document.querySelectorAll('.bloque-campo-dinamico').forEach(bloque => {
-            const inputEtiq = block = bloque.querySelector('.input-etiqueta');
+            const inputEtiq = bloque.querySelector('.input-etiqueta');
             const inputVal = bloque.querySelector('.input-valor');
             if (inputEtiq && inputVal) {
                 camposExtras.push({ etiqueta: inputEtiq.value, valor: inputVal.value });
@@ -204,7 +206,7 @@ function configurarEventosPrincipales() {
             formCredencial.reset();
             contenedorCampos.innerHTML = '';
             alert('¡Cuenta guardada con éxito!');
-            cargarContrasenasOoffline();
+            cargarContrasenasOoffline(); 
         };
     });
 
@@ -217,7 +219,6 @@ function configurarEventosPrincipales() {
     });
 }
 
-// CARGA DE TARJETAS: Incluye botón de Editar y de Eliminar
 function cargarContrasenasOoffline() {
     const lista = document.getElementById('lista-credenciales');
     lista.innerHTML = '';
@@ -235,26 +236,11 @@ function cargarContrasenasOoffline() {
                 extrasHTML += `<p><strong>${ext.etiqueta}:</strong> ${ext.valor}</p>`;
             });
 
-            // CORREGIDO: Comillas invertidas añadidas para envolver el diseño de la tarjeta
             tarjeta.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center;"> 
-                    <h4>🌐 ${cuenta.sitio}</h4> 
-                    <div style="display:flex; gap:5px;"> 
-                        <button class="btn-secundario" style="width:auto; padding:5px 10px; margin:0;" onclick="abrirEditorCuenta(${cuenta.id})">✏️</button> 
-                        <button class="btn-cancelar" style="width:auto; padding:5px 10px; margin:0; background-color:#c0392b;" onclick="eliminarCuentaCredencial(${cuenta.id})">🗑️</button> 
-                    </div> 
-                </div> 
-                <div class="detalles-cuenta" style="margin-top:10px;"> 
-                    <p><strong>Usuario:</strong> ${cuenta.usuario}</p> 
-                    <p><strong>Contraseña:</strong> ${cuenta.clave}</p> 
-                    ${extrasHTML} 
-                </div>
-            `;
-            lista.appendChild(tarjeta);
-            cursor.continue();
-        }
-    };
-}
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+
+🌐 ${cuenta.sitio}✏️🗑️
+Usuario: ${cuenta.usuario}Contraseña: ${cuenta.clave}${extrasHTML}`;lista.appendChild(tarjeta);cursor.continue();}};}
 
 function abrirEditorCuenta(id) {
     const transaccion = db.transaction(['credenciales'], 'readonly');
@@ -270,7 +256,7 @@ function abrirEditorCuenta(id) {
         cuenta.extras.forEach(ext => {
             const nuevaFila = document.createElement('div');
             nuevaFila.className = 'bloque-campo-dinamico';
-            // CORREGIDO: Comillas invertidas añadidas para envolver los inputs dinámicos en el editor
+            // CORREGIDO: Comillas invertidas ( ` ) añadidas para envolver el texto HTML largo
             nuevaFila.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;"> 
                     <input type="text" value="${ext.etiqueta}" required class="input-etiqueta" style="width:75%; padding:5px;"> 
@@ -284,32 +270,41 @@ function abrirEditorCuenta(id) {
     };
 }
 
-// ELIMINAR INDIVIDUALMENTE DE INDEXEDDB
-// INSTRUCCIÓN FÍSICA PARA ELIMINAR LA CUENTA DE INDEXEDDB (Corregido)
 function eliminarCuentaCredencial(id) {
-    // Alerta nativa que frena la pantalla por seguridad
-    if (confirm("⚠️ ¿Estás seguro de que quieres eliminar esta contraseña? Esta acción no se puede deshacer.")) {
-        
-        // Abrimos la base de datos en modo escritura
-        const transaccion = db.transaction(['credenciales'], 'readwrite');
-        const almacen = transaccion.objectStore('credenciales');
-        
-        // Le damos la orden de borrar usando el ID único de la tarjeta
-        const solicitudEliminar = almacen.delete(id);
+    idCredencialAEliminar = id;
+    const modalBorrar = document.getElementById('modal-confirmar-borrar');
+    if (modalBorrar) {
+        modalBorrar.style.display = 'flex';
+    }
+}
 
-        solicitudEliminar.onsuccess = () => {
-            alert("¡Cuenta eliminada con éxito del teléfono!");
-            cargarContrasenasOoffline(); // <--- Redibuja la lista al instante sin la tarjeta
+function initBotonesBorrarPersonalizado() {
+    const btnCancelarBorrar = document.getElementById('btn-cancelar-borrar');
+    const btnAceptarBorrar = document.getElementById('btn-aceptar-borrar');
+    const modalBorrar = document.getElementById('modal-confirmar-borrar');
+
+    if (btnCancelarBorrar && btnAceptarBorrar && modalBorrar) {
+        btnCancelarBorrar.onclick = () => {
+            modalBorrar.style.display = 'none';
+            idCredencialAEliminar = null;
         };
 
-        solicitudEliminar.onerror = (e) => {
-            console.error("Error al borrar en IndexedDB:", e.target.error);
-            alert("Hubo un error físico al intentar borrar la cuenta.");
+        btnAceptarBorrar.onclick = () => {
+            if (idCredencialAEliminar !== null) {
+                const transaccion = db.transaction(['credenciales'], 'readwrite');
+                const almacen = transaccion.objectStore('credenciales');
+                const solicitudEliminar = almacen.delete(idCredencialAEliminar);
+
+                solicitudEliminar.onsuccess = () => {
+                    modalBorrar.style.display = 'none';
+                    idCredencialAEliminar = null;
+                    cargarContrasenasOoffline(); // Redibuja la lista actualizada al instante
+                };
+            }
         };
     }
 }
 
-// INICIALIZACIÓN MODO OSCURO / CLARO LOCAL STORAGE
 function initModoOscuroClaro() {
     const btnTema = document.getElementById('btn-tema');
     if (btnTema) {
