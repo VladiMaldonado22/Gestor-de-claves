@@ -1,324 +1,98 @@
-const BD_NOMBRE = 'CajaFuerteBD';
-const BD_VERSION = 1;
-let db;
-
-// Variables de control de bloqueo
-let intentosFallidos = 0;
-let tiempoBloqueoActivo = false;
-let nivelBloqueo = 1; 
-let idCredencialAEliminar = null;
-
-// Variables de Interfaz
-const pantallaRegistro = document.getElementById('pantalla-registro');
-const pantallaPrincipal = document.getElementById('pantalla-principal');
-const pantallaLogin = document.getElementById('pantalla-login');
-const modalCuenta = document.getElementById('modal-cuenta');
-const modalTitulo = document.getElementById('modal-titulo');
-const contenedorCampos = document.getElementById('contenedor-campos-dinamicos');
-const formCredencial = document.getElementById('formulario-credencial');
-
-document.addEventListener('DOMContentLoaded', () => {
-    initBaseDatos(); 
-    initModoOscuroClaro();
-    initBotonesBorrarPersonalizado();
-});
-
-function initBaseDatos() {
-    const solicitud = indexedDB.open(BD_NOMBRE, BD_VERSION);
-
-    solicitud.onupgradeneeded = (e) => {
-        db = e.target.result;
-        if (!db.objectStoreNames.contains('configuracion')) db.createObjectStore('configuracion', { keyPath: 'clave' });
-        if (!db.objectStoreNames.contains('credenciales')) db.createObjectStore('credenciales', { keyPath: 'id', autoIncrement: true });
-    };
-
-    solicitud.onsuccess = (e) => {
-        db = e.target.result;
-        configurarFormularioInicial();
-        configurarEventosPrincipales();
-        verificarUsuarioExistente();
-    };
+:root {
+    /* COLORES MODO OSCURO (Por defecto) */
+    --fondo-oscuro: #121212;
+    --fondo-tarjeta: #1e1e1e;
+    --fondo-inputs: #121212;
+    --azul-electrico: #2ecc71; /* Verde Esmeralda Premium */
+    --azul-hover: #27ae60;
+    --texto-principal: #eeeeee;
+    --texto-secundario: #95a5a6;
+    --borde-tarjeta: #2a2a2a;
+    --borde-inputs: #333;
 }
 
-function verificarUsuarioExistente() {
-    const transaccion = db.transaction(['configuracion'], 'readonly');
-    const almacen = transaccion.objectStore('configuracion');
-    const solicitud = almacen.get('hash_maestro');
-
-    solicitud.onsuccess = () => {
-        if (solicitud.result) {
-            pantallaRegistro.style.display = 'none';
-            pantallaPrincipal.style.display = 'none';
-            pantallaLogin.style.display = 'block';
-            configurarFormularioLogin(solicitud.result.valor);
-        } else {
-            pantallaRegistro.style.display = 'block';
-            pantallaLogin.style.display = 'none';
-            pantallaPrincipal.style.display = 'none';
-        }
-    };
+/* COLORES MODO CLARO (Se activan con el botón) */
+body.modo-claro {
+    --fondo-oscuro: #f5f6fa;
+    --fondo-tarjeta: #ffffff;
+    --fondo-inputs: #ffffff;
+    --azul-electrico: #27ae60;
+    --azul-hover: #219653;
+    --texto-principal: #2c3e50;
+    --texto-secundario: #7f8c8d;
+    --borde-tarjeta: #e1e8ed;
+    --borde-inputs: #ccc;
 }
 
-function configurarFormularioInicial() {
-    document.getElementById('formulario-inicial').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const claveInput = document.getElementById('clave-maestra').value;
-        const confirmarInput = document.getElementById('confirmar-clave').value;
-        const pistaInput = document.getElementById('pista-clave').value;
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; transition: background-color 0.3s ease, color 0.3s ease; }
+body { background-color: var(--fondo-oscuro); color: var(--texto-principal); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
 
-        if (claveInput !== confirmarInput) { alert('Las contraseñas no coinciden.'); return; }
-
-        const transaccion = db.transaction(['configuracion'], 'readwrite');
-        const almacen = transaccion.objectStore('configuracion');
-        almacen.put({ clave: 'hash_maestro', valor: claveInput });
-        almacen.put({ clave: 'pista_maestra', valor: pistaInput });
-
-        transaccion.oncomplete = () => { verificarUsuarioExistente(); };
-    });
+/* Botón flotante para el tema */
+.btn-tema-flotante {
+    position: fixed;
+    top: 15px;
+    left: 15px; /* Se queda fijo arriba a la izquierda sin estorbar al botón + */
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--fondo-tarjeta);
+    border: 1px solid var(--borde-tarjeta);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    z-index: 1000;
 }
 
-function configurarFormularioLogin(claveCorrecta) {
-    const formLogin = document.getElementById('formulario-login');
-    const btnEntrar = document.getElementById('btn-entrar');
-    const avisoBloqueo = document.getElementById('aviso-bloqueo');
-    const segundosBloqueo = document.getElementById('segundos-bloqueo');
-    const btnReestablecer = document.getElementById('btn-reestablecer');
+.contenedor-seguro { background-color: var(--fondo-tarjeta); width: 100%; max-width: 420px; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); border: 1px solid var(--borde-tarjeta); }
+.encabezado { text-align: center; margin-bottom: 25px; }
+.icono-candado { font-size: 3.5rem; margin-bottom: 10px; }
+h1, h2 { font-size: 1.6rem; color: var(--texto-principal); }
 
-    formLogin.onsubmit = (e) => {
-        e.preventDefault();
-        if (tiempoBloqueoActivo) return;
-
-        const claveIntroducida = document.getElementById('clave-login').value;
-
-        if (claveIntroducida === claveCorrecta) {
-            intentosFallidos = 0;
-            nivelBloqueo = 1;
-            pantallaLogin.style.display = 'none';
-            pantallaPrincipal.style.display = 'block';
-            cargarContrasenasOoffline();
-        } else {
-            intentosFallidos++;
-            
-            let maxIntentos = nivelBloqueo === 1 ? 5 : 3;
-            alert(`Contraseña incorrecta. Intento ${intentosFallidos} de ${maxIntentos}.`);
-            
-            const transaccion = db.transaction(['configuracion'], 'readonly');
-            const solicitudPista = transaccion.objectStore('configuracion').get('pista_maestra');
-            solicitudPista.onsuccess = () => {
-                if (solicitudPista.result && solicitudPista.result.valor) {
-                    document.getElementById('texto-pista-guardada').innerText = solicitudPista.result.valor;
-                    document.getElementById('contenedor-pista').style.display = 'block';
-                }
-            };
-
-            if (intentosFallidos >= maxIntentos) {
-                tiempoBloqueoActivo = true;
-                btnEntrar.disabled = true;
-                avisoBloqueo.style.display = 'block';
-                btnReestablecer.style.display = 'block';
-
-                let tiempoRestante = nivelBloqueo === 1 ? 30 : 300; 
-                segundosBloqueo.innerText = tiempoRestante;
-
-                const intervalo = setInterval(() => {
-                    tiempoRestante--;
-                    segundosBloqueo.innerText = tiempoRestante;
-                    if (tiempoRestante <= 0) {
-                        clearInterval(intervalo);
-                        tiempoBloqueoActivo = false;
-                        btnEntrar.disabled = false;
-                        avisoBloqueo.style.display = 'none';
-                        intentosFallidos = 0;
-                        nivelBloqueo = 2; 
-                    }
-                }, 1000);
-            }
-        }
-    };
-
-    btnReestablecer.onclick = () => {
-        if (confirm("⚠️ ¿Estás seguro? Se BORRARÁN todas tus contraseñas guardadas de forma permanente.")) {
-            indexedDB.deleteDatabase(BD_NOMBRE);
-            location.reload();
-        }
-    };
+.encabezado-principal { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.btn-flotante { 
+    width: 45px; height: 45px; border-radius: 50%; font-size: 1.8rem; 
+    background-color: var(--azul-electrico); color: white; border: none; cursor: pointer;
+    display: flex; justify-content: center; align-items: center;
+    padding-bottom: 19px;       /*signo + blanco del circulo verde*/
 }
+.btn-flotante:hover { background-color: var(--azul-hover); }
 
-function configurarEventosPrincipales() {
-    document.getElementById('btn-abrir-modal').addEventListener('click', () => {
-        modalTitulo.innerText = "Añadir Nueva Cuenta";
-        document.getElementById('cuenta-id-edicion').value = "";
-        formCredencial.reset();
-        contenedorCampos.innerHTML = '';
-        modalCuenta.style.display = 'flex';
-    });
-    document.getElementById('btn-cerrar-modal').addEventListener('click', () => modalCuenta.style.display = 'none');
-
-    document.getElementById('btn-agregar-campo').addEventListener('click', () => {
-        const nuevaFila = document.createElement('div');
-        nuevaFila.className = 'bloque-campo-dinamico';
-        nuevaFila.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                <input type="text" placeholder="Nombre del dato (Ej: PIN)" required class="input-etiqueta" style="width:75%; padding:5px;">
-                <button type="button" class="btn-eliminar-fila" onclick="this.parentElement.parentElement.remove()" style="margin:0; width:auto; padding:0 5px;">❌</button>
-            </div>
-            <input type="text" placeholder="Valor secreto" required class="input-valor">
-        `;
-        contenedorCampos.appendChild(nuevaFila);
-    });
-
-    formCredencial.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const idEdicion = document.getElementById('cuenta-id-edicion').value;
-        const titulo = document.getElementById('cuenta-titulo').value;
-        const usuarioBase = document.getElementById('cuenta-usuario-base').value;
-        const claveBase = document.getElementById('cuenta-clave-base').value;
-
-        let camposExtras = [];
-        document.querySelectorAll('.bloque-campo-dinamico').forEach(bloque => {
-            const inputEtiq = bloque.querySelector('.input-etiqueta');
-            const inputVal = bloque.querySelector('.input-valor');
-            if (inputEtiq && inputVal) {
-                camposExtras.push({ etiqueta: inputEtiq.value, valor: inputVal.value });
-            }
-        });
-
-        const transaccion = db.transaction(['credenciales'], 'readwrite');
-        const almacen = transaccion.objectStore('credenciales');
-
-        const datosCuenta = {
-            sitio: titulo,
-            usuario: usuarioBase,
-            clave: claveBase,
-            extras: camposExtras,
-            fecha: new Date().toLocaleDateString()
-        };
-
-        if (idEdicion) {
-            datosCuenta.id = Number(idEdicion);
-            almacen.put(datosCuenta);
-        } else {
-            almacen.add(datosCuenta);
-        }
-
-        transaccion.oncomplete = () => {
-            modalCuenta.style.display = 'none';
-            formCredencial.reset();
-            contenedorCampos.innerHTML = '';
-            alert('¡Cuenta guardada con éxito!');
-            cargarContrasenasOoffline(); 
-        };
-    });
-
-    document.getElementById('buscador-claves').addEventListener('input', (e) => {
-        const texto = e.target.value.toLowerCase();
-        document.querySelectorAll('.tarjeta-cuenta').forEach(tarjeta => {
-            const titulo = tarjeta.querySelector('h4').innerText.toLowerCase();
-            tarjeta.style.display = titulo.includes(texto) ? 'block' : 'none';
-        });
-    });
+.grupo-campo { margin-bottom: 15px; }
+.bloque-campo-dinamico {
+    background: var(--fondo-inputs);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border: 1px dashed var(--borde-inputs);
 }
+.bloque-campo-dinamico input { margin-top: 5px; }
 
-function cargarContrasenasOoffline() {
-    const lista = document.getElementById('lista-credenciales');
-    lista.innerHTML = '';
+label { display: block; font-size: 0.85rem; color: var(--azul-electrico); margin-bottom: 6px; font-weight: 600; }
+input { width: 100%; background-color: var(--fondo-inputs); border: 1px solid var(--borde-inputs); padding: 12px; border-radius: 10px; color: var(--texto-principal); font-size: 1rem; }
+input:focus { outline: none; border-color: var(--azul-electrico); }
+small { display: block; color: var(--texto-secundario); font-size: 0.75rem; margin-top: 4px; }
 
-    const transaccion = db.transaction(['credenciales'], 'readonly');
-    transaccion.objectStore('credenciales').openCursor().onsuccess = (e) => {
-        const cursor = e.target.result;
-        if (cursor) {
-            const cuenta = cursor.value;
-            const tarjeta = document.createElement('div');
-            tarjeta.className = 'tarjeta-cuenta';
+.alerta-advertencia { background-color: #3a1a1a; border: 1px solid #e74c3c; padding: 12px; border-radius: 10px; font-size: 0.8rem; margin-bottom: 20px; color: #f7d7d7; }
+body.modo-claro .alerta-advertencia { background-color: #fceade; border: 1px solid #e67e22; color: #d35400; }
 
-            let extrasHTML = '';
-            cuenta.extras.forEach(ext => {
-                extrasHTML += `<p><strong>${ext.etiqueta}:</strong> ${ext.valor}</p>`;
-            });
+.alerta-pista { background-color: #1a252f; border: 1px solid #3498db; padding: 12px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 20px; color: #d2f4f5; }
+body.modo-claro .alerta-pista { background-color: #e8f4f8; border: 1px solid #2980b9; color: #2c3e50; }
 
-            tarjeta.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+button { width: 100%; background-color: var(--azul-electrico); color: #fff; border: none; padding: 12px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 10px; }
+button:hover { background-color: var(--azul-hover); }
+.btn-secundario { background: #34495e; color: #fff; font-size: 0.85rem; }
+body.modo-claro .btn-secundario { background: #bdc3c7; color: #2c3e50; }
+.btn-cancelar { background: #c0392b; color: #fff; }
 
-🌐 ${cuenta.sitio}✏️🗑️
-Usuario: ${cuenta.usuario}Contraseña: ${cuenta.clave}${extrasHTML}`;lista.appendChild(tarjeta);cursor.continue();}};}
+.input-busqueda { width: 100%; background-color: var(--fondo-inputs); border: 1px solid var(--borde-inputs); padding: 12px; border-radius: 10px; color: var(--texto-principal); margin-bottom: 20px; }
+.tarjeta-cuenta { background: var(--fondo-tarjeta); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--borde-tarjeta); border-left: 4px solid var(--azul-electrico); }
+.detalles-cuenta p { font-size: 0.9rem; color: var(--texto-secundario); margin-bottom: 4px; }
 
-function abrirEditorCuenta(id) {
-    const transaccion = db.transaction(['credenciales'], 'readonly');
-    transaccion.objectStore('credenciales').get(id).onsuccess = (e) => {
-        const cuenta = e.target.result;
-        modalTitulo.innerText = "Editar Cuenta";
-        document.getElementById('cuenta-id-edicion').value = cuenta.id;
-        document.getElementById('cuenta-titulo').value = cuenta.sitio;
-        document.getElementById('cuenta-usuario-base').value = cuenta.usuario;
-        document.getElementById('cuenta-clave-base').value = cuenta.clave;
-
-        contenedorCampos.innerHTML = '';
-        cuenta.extras.forEach(ext => {
-            const nuevaFila = document.createElement('div');
-            nuevaFila.className = 'bloque-campo-dinamico';
-            // CORREGIDO: Comillas invertidas ( ` ) añadidas para envolver el texto HTML largo
-            nuevaFila.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;"> 
-                    <input type="text" value="${ext.etiqueta}" required class="input-etiqueta" style="width:75%; padding:5px;"> 
-                    <button type="button" class="btn-eliminar-fila" onclick="this.parentElement.parentElement.remove()" style="margin:0; width:auto; padding:0 5px;">❌</button> 
-                </div> 
-                <input type="text" value="${ext.valor}" required class="input-valor">
-            `;
-            contenedorCampos.appendChild(nuevaFila);
-        });
-        modalCuenta.style.display = 'flex';
-    };
-}
-
-function eliminarCuentaCredencial(id) {
-    idCredencialAEliminar = id;
-    const modalBorrar = document.getElementById('modal-confirmar-borrar');
-    if (modalBorrar) {
-        modalBorrar.style.display = 'flex';
-    }
-}
-
-function initBotonesBorrarPersonalizado() {
-    const btnCancelarBorrar = document.getElementById('btn-cancelar-borrar');
-    const btnAceptarBorrar = document.getElementById('btn-aceptar-borrar');
-    const modalBorrar = document.getElementById('modal-confirmar-borrar');
-
-    if (btnCancelarBorrar && btnAceptarBorrar && modalBorrar) {
-        btnCancelarBorrar.onclick = () => {
-            modalBorrar.style.display = 'none';
-            idCredencialAEliminar = null;
-        };
-
-        btnAceptarBorrar.onclick = () => {
-            if (idCredencialAEliminar !== null) {
-                const transaccion = db.transaction(['credenciales'], 'readwrite');
-                const almacen = transaccion.objectStore('credenciales');
-                const solicitudEliminar = almacen.delete(idCredencialAEliminar);
-
-                solicitudEliminar.onsuccess = () => {
-                    modalBorrar.style.display = 'none';
-                    idCredencialAEliminar = null;
-                    cargarContrasenasOoffline(); // Redibuja la lista actualizada al instante
-                };
-            }
-        };
-    }
-}
-
-function initModoOscuroClaro() {
-    const btnTema = document.getElementById('btn-tema');
-    if (btnTema) {
-        const temaGuardado = localStorage.getItem('tema');
-        if (temaGuardado === 'claro') {
-            document.body.classList.add('modo-claro');
-        }
-        btnTema.addEventListener('click', () => {
-            document.body.classList.toggle('modo-claro');
-            if (document.body.classList.contains('modo-claro')) {
-                localStorage.setItem('tema', 'claro');
-            } else {
-                localStorage.setItem('tema', 'oscuro');
-            }
-        });
-    }
-}
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; padding: 20px; z-index: 100; }
+body.modo-claro .modal { background: rgba(0,0,0,0.5); }
+.modal-contenido { background: var(--fondo-tarjeta); padding: 25px; border-radius: 20px; width: 100%; max-width: 390px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--borde-tarjeta); }
+.modal-acciones { display: flex; gap: 10px; margin-top: 15px; }
+.btn-eliminar-fila { background: none; border: none; cursor: pointer; font-size: 1rem; }
