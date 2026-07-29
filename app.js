@@ -1,118 +1,329 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi caja fuerte</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+const BD_NOMBRE = 'CajaFuerteBD';
+const BD_VERSION = 1;
+let db;
 
-    <!-- BOTÓN FLOTANTE MODO OSCURO / CLARO -->
-    <button id="btn-tema" class="btn-tema-flotante">🌓</button>
+// Variables de control de bloqueo
+let intentosFallidos = 0;
+let tiempoBloqueoActivo = false;
+let nivelBloqueo = 1; // 1 = 30seg, 2 = 5min
 
-    <!-- PANTALLA DE CONFIGURACIÓN INICIAL -->
-    <div id="pantalla-registro" class="contenedor-seguro" style="display: none;">
-        <div class="encabezado">
-            <div class="icono-candado">🔐</div>
-            <h1>Crea tu caja fuerte</h1>
-            <p>Tus contraseñas se guardarán de forma <strong>100% local e ilimitada</strong>.</p>
-        </div>
+// Variables de Interfaz
+const pantallaRegistro = document.getElementById('pantalla-registro');
+const pantallaPrincipal = document.getElementById('pantalla-principal');
+const pantallaLogin = document.getElementById('pantalla-login');
+const modalCuenta = document.getElementById('modal-cuenta');
+const modalTitulo = document.getElementById('modal-titulo');
+const contenedorCampos = document.getElementById('contenedor-campos-dinamicos');
+const formCredencial = document.getElementById('formulario-credencial');
 
-        <form id="formulario-inicial">
-            <div class="grupo-campo">
-                <label for="clave-maestra">Contraseña maestra nueva</label>
-                <input type="password" id="clave-maestra" placeholder="Crea una clave segura..." required>
+document.addEventListener('DOMContentLoaded', () => {
+    initBaseDatos(); // Primero levantamos la base de datos de manera ordenada
+    initModoOscuroClaro(); // Inicializamos el botón de cambio de tema
+});
+
+function initBaseDatos() {
+    const solicitud = indexedDB.open(BD_NOMBRE, BD_VERSION);
+
+    solicitud.onupgradeneeded = (e) => {
+        db = e.target.result;
+        if (!db.objectStoreNames.contains('configuracion')) db.createObjectStore('configuracion', { keyPath: 'clave' });
+        if (!db.objectStoreNames.contains('credenciales')) db.createObjectStore('credenciales', { keyPath: 'id', autoIncrement: true });
+    };
+
+    solicitud.onsuccess = (e) => {
+        db = e.target.result;
+        configurarFormularioInicial();
+        configurarEventosPrincipales();
+        verificarUsuarioExistente();
+    };
+}
+
+function verificarUsuarioExistente() {
+    const transaccion = db.transaction(['configuracion'], 'readonly');
+    const almacen = transaccion.objectStore('configuracion');
+    const solicitud = almacen.get('hash_maestro');
+
+    solicitud.onsuccess = () => {
+        if (solicitud.result) {
+            pantallaRegistro.style.display = 'none';
+            pantallaPrincipal.style.display = 'none';
+            pantallaLogin.style.display = 'block';
+            configurarFormularioLogin(solicitud.result.valor);
+        } else {
+            pantallaRegistro.style.display = 'block';
+            pantallaLogin.style.display = 'none';
+            pantallaPrincipal.style.display = 'none';
+        }
+    };
+}
+
+function configurarFormularioInicial() {
+    document.getElementById('formulario-inicial').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const claveInput = document.getElementById('clave-maestra').value;
+        const confirmarInput = document.getElementById('confirmar-clave').value;
+        const pistaInput = document.getElementById('pista-clave').value;
+
+        if (claveInput !== confirmarInput) { alert('Las contraseñas no coinciden.'); return; }
+
+        const transaccion = db.transaction(['configuracion'], 'readwrite');
+        const almacen = transaccion.objectStore('configuracion');
+        almacen.put({ clave: 'hash_maestro', valor: claveInput });
+        almacen.put({ clave: 'pista_maestra', valor: pistaInput });
+
+        transaccion.oncomplete = () => { verificarUsuarioExistente(); };
+    });
+}
+
+function configurarFormularioLogin(claveCorrecta) {
+    const formLogin = document.getElementById('formulario-login');
+    const btnEntrar = document.getElementById('btn-entrar');
+    const avisoBloqueo = document.getElementById('aviso-bloqueo');
+    const segundosBloqueo = document.getElementById('segundos-bloqueo');
+    const btnReestablecer = document.getElementById('btn-reestablecer');
+
+    formLogin.onsubmit = (e) => {
+        e.preventDefault();
+        if (tiempoBloqueoActivo) return;
+
+        const claveIntroducida = document.getElementById('clave-login').value;
+
+        if (claveIntroducida === claveCorrecta) {
+            intentosFallidos = 0;
+            nivelBloqueo = 1;
+            pantallaLogin.style.display = 'none';
+            pantallaPrincipal.style.display = 'block';
+            cargarContrasenasOoffline();
+        } else {
+            intentosFallidos++;
+            
+            let maxIntentos = nivelBloqueo === 1 ? 5 : 3;
+            alert(`Contraseña incorrecta. Intento ${intentosFallidos} de ${maxIntentos}.`);
+            
+            const transaccion = db.transaction(['configuracion'], 'readonly');
+            const solicitudPista = transaccion.objectStore('configuracion').get('pista_maestra');
+            solicitudPista.onsuccess = () => {
+                if (solicitudPista.result && solicitudPista.result.valor) {
+                    document.getElementById('texto-pista-guardada').innerText = solicitudPista.result.valor;
+                    document.getElementById('contenedor-pista').style.display = 'block';
+                }
+            };
+
+            if (intentosFallidos >= maxIntentos) {
+                tiempoBloqueoActivo = true;
+                btnEntrar.disabled = true;
+                avisoBloqueo.style.display = 'block';
+                btnReestablecer.style.display = 'block';
+
+                let tiempoRestante = nivelBloqueo === 1 ? 30 : 300; 
+                segundosBloqueo.innerText = tiempoRestante;
+
+                const intervalo = setInterval(() => {
+                    tiempoRestante--;
+                    segundosBloqueo.innerText = tiempoRestante;
+                    if (tiempoRestante <= 0) {
+                        clearInterval(intervalo);
+                        tiempoBloqueoActivo = false;
+                        btnEntrar.disabled = false;
+                        avisoBloqueo.style.display = 'none';
+                        intentosFallidos = 0;
+                        nivelBloqueo = 2; 
+                    }
+                }, 1000);
+            }
+        }
+    };
+
+    btnReestablecer.onclick = () => {
+        if (confirm("⚠️ ¿Estás seguro? Se BORRARÁN todas tus contraseñas guardadas de forma permanente.")) {
+            indexedDB.deleteDatabase(BD_NOMBRE);
+            location.reload();
+        }
+    };
+}
+
+function configurarEventosPrincipales() {
+    document.getElementById('btn-abrir-modal').addEventListener('click', () => {
+        modalTitulo.innerText = "Añadir Nueva Cuenta";
+        document.getElementById('cuenta-id-edicion').value = "";
+        formCredencial.reset();
+        contenedorCampos.innerHTML = '';
+        modalCuenta.style.display = 'flex';
+    });
+    document.getElementById('btn-cerrar-modal').addEventListener('click', () => modalCuenta.style.display = 'none');
+
+    document.getElementById('btn-agregar-campo').addEventListener('click', () => {
+        const nuevaFila = document.createElement('div');
+        nuevaFila.className = 'bloque-campo-dinamico';
+        nuevaFila.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                <input type="text" placeholder="Nombre del dato (Ej: PIN)" required class="input-etiqueta" style="width:75%; padding:5px;">
+                <button type="button" class="btn-eliminar-fila" onclick="this.parentElement.parentElement.remove()" style="margin:0; width:auto; padding:0 5px;">❌</button>
             </div>
-            <div class="grupo-campo">
-                <label for="confirmar-clave">Confirmar contraseña maestra</label>
-                <input type="password" id="confirmar-clave" placeholder="Repite tu clave..." required>
-            </div>
-            <div class="alerta-advertencia">
-                ⚠️ <strong>Atención:</strong> Si olvidas esta contraseña maestra, no hay servidor de recuperación.
-            </div>
-            <div class="grupo-campo">
-                <label for="pista-clave">Pista de recuperación (Opcional)</label>
-                <input type="text" id="pista-clave" placeholder="Ej: El nombre de mi primer perro...">
-            </div>
-            <button type="submit" id="btn-crear">Comenzar a guardar</button>
-        </form>
-    </div>
+            <input type="text" placeholder="Valor secreto" required class="input-valor">
+        `;
+        contenedorCampos.appendChild(nuevaFila);
+    });
 
-    <!-- PANTALLA DE LOGIN: INICIAR SESIÓN -->
-    <div id="pantalla-login" class="contenedor-seguro" style="display: none;">
-        <div class="encabezado">
-            <div class="icono-candado">🔒</div>
-            <h1>Caja fuerte bloqueada</h1>
-            <p>Introduce tu contraseña maestra para entrar.</p>
-        </div>
+    formCredencial.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const idEdicion = document.getElementById('cuenta-id-edicion').value;
+        const titulo = document.getElementById('cuenta-titulo').value;
+        const usuarioBase = document.getElementById('cuenta-usuario-base').value;
+        const claveBase = document.getElementById('cuenta-clave-base').value;
 
-        <form id="formulario-login">
-            <div class="grupo-campo">
-                <label for="clave-login">Contraseña maestra:</label>
-                <input type="password" id="clave-login" placeholder="Ingresa tu contraseña..." required>
-            </div>
+        let camposExtras = [];
+        document.querySelectorAll('.bloque-campo-dinamico').forEach(bloque => {
+            const inputEtiq = block = bloque.querySelector('.input-etiqueta');
+            const inputVal = bloque.querySelector('.input-valor');
+            if (inputEtiq && inputVal) {
+                camposExtras.push({ etiqueta: inputEtiq.value, valor: inputVal.value });
+            }
+        });
 
-            <div id="contenedor-pista" class="alerta-pista" style="display: none;">
-                💡 <strong>Pista de ayuda:</strong> <span id="texto-pista-guardada"></span>
-            </div>
+        const transaccion = db.transaction(['credenciales'], 'readwrite');
+        const almacen = transaccion.objectStore('credenciales');
 
-            <div id="aviso-bloqueo" class="alerta-advertencia" style="display: none; background-color: #3a1a1a;">
-                ⏳ Demasiados intentos. App bloqueada por <span id="segundos-bloqueo">30</span> segundos.
-            </div>
+        const datosCuenta = {
+            sitio: titulo,
+            usuario: usuarioBase,
+            clave: claveBase,
+            extras: camposExtras,
+            fecha: new Date().toLocaleDateString()
+        };
 
-            <button type="submit" id="btn-entrar">Desbloquear</button>
-            <button type="button" id="btn-reestablecer" class="btn-cancelar" style="display: none; margin-top: 15px;">⚠️ Borrar App y Reestablecer</button>
-        </form>
-    </div>
+        if (idEdicion) {
+            datosCuenta.id = Number(idEdicion);
+            almacen.put(datosCuenta);
+        } else {
+            almacen.add(datosCuenta);
+        }
 
-    <!-- PANTALLA PRINCIPAL: LISTA -->
-    <div id="pantalla-principal" class="contenedor-seguro" style="display: none;">
-        <div class="encabezado-principal">
-            <h2>🔑 Mis Contraseñas</h2>
-            <button id="btn-abrir-modal" class="btn-flotante">+</button>
-        </div>
+        transaccion.oncomplete = () => {
+            modalCuenta.style.display = 'none';
+            formCredencial.reset();
+            contenedorCampos.innerHTML = '';
+            alert('¡Cuenta guardada con éxito!');
+            cargarContrasenasOoffline();
+        };
+    });
 
-        <input type="text" id="buscador-claves" placeholder="Buscar cuenta (Ej: Facebook)..." class="input-busqueda">
+    document.getElementById('buscador-claves').addEventListener('input', (e) => {
+        const texto = e.target.value.toLowerCase();
+        document.querySelectorAll('.tarjeta-cuenta').forEach(tarjeta => {
+            const titulo = tarjeta.querySelector('h4').innerText.toLowerCase();
+            tarjeta.style.display = titulo.includes(texto) ? 'block' : 'none';
+        });
+    });
+}
 
-        <div id="lista-credenciales" class="lista-contenedor"></div>
+// CARGA DE TARJETAS: Incluye botón de Editar y de Eliminar
+function cargarContrasenasOoffline() {
+    const lista = document.getElementById('lista-credenciales');
+    lista.innerHTML = '';
 
-        <!-- Ventana Modal emergente para añadir cuentas -->
-        <div id="modal-cuenta" class="modal" style="display: none;">
-            <div class="modal-contenido">
-                <h3 id="modal-titulo">Añadir Nueva Cuenta</h3>
-                <form id="formulario-credencial">
-                    <input type="hidden" id="cuenta-id-edicion">
-                    
-                    <div class="grupo-campo">
-                        <label for="cuenta-titulo">Nombre de la App / Sitio</label>
-                        <input type="text" id="cuenta-titulo" placeholder="Ej: Facebook, Netflix..." required>
-                    </div>
+    const transaccion = db.transaction(['credenciales'], 'readonly');
+    transaccion.objectStore('credenciales').openCursor().onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+            const cuenta = cursor.value;
+            const tarjeta = document.createElement('div');
+            tarjeta.className = 'tarjeta-cuenta';
 
-                    <div class="grupo-campo">
-                        <label>Usuario / Correo Electrónico</label>
-                        <input type="text" id="cuenta-usuario-base" placeholder="Tu correo o nombre de usuario" required>
-                    </div>
-                    <div class="grupo-campo">
-                        <label>Contraseña</label>
-                        <input type="text" id="cuenta-clave-base" placeholder="Tu contraseña de esa app" required>
-                    </div>
+            let extrasHTML = '';
+            cuenta.extras.forEach(ext => {
+                extrasHTML += `<p><strong>${ext.etiqueta}:</strong> ${ext.valor}</p>`;
+            });
 
-                    <!-- Contenedor exclusivo para campos EXTRAS -->
-                    <label style="font-size: 0.75rem; margin-top: 15px; display:block;">Campos Adicionales Opcionales</label>
-                    <div id="contenedor-campos-dinamicos"></div>
+            // CORREGIDO: Comillas invertidas añadidas para envolver el diseño de la tarjeta
+            tarjeta.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;"> 
+                    <h4>🌐 ${cuenta.sitio}</h4> 
+                    <div style="display:flex; gap:5px;"> 
+                        <button class="btn-secundario" style="width:auto; padding:5px 10px; margin:0;" onclick="abrirEditorCuenta(${cuenta.id})">✏️</button> 
+                        <button class="btn-cancelar" style="width:auto; padding:5px 10px; margin:0; background-color:#c0392b;" onclick="eliminarCuentaCredencial(${cuenta.id})">🗑️</button> 
+                    </div> 
+                </div> 
+                <div class="detalles-cuenta" style="margin-top:10px;"> 
+                    <p><strong>Usuario:</strong> ${cuenta.usuario}</p> 
+                    <p><strong>Contraseña:</strong> ${cuenta.clave}</p> 
+                    ${extrasHTML} 
+                </div>
+            `;
+            lista.appendChild(tarjeta);
+            cursor.continue();
+        }
+    };
+}
 
-                    <button type="button" id="btn-agregar-campo" class="btn-secundario">➕ Añadir Dato Extra (PIN, Código, etc)</button>
+function abrirEditorCuenta(id) {
+    const transaccion = db.transaction(['credenciales'], 'readonly');
+    transaccion.objectStore('credenciales').get(id).onsuccess = (e) => {
+        const cuenta = e.target.result;
+        modalTitulo.innerText = "Editar Cuenta";
+        document.getElementById('cuenta-id-edicion').value = cuenta.id;
+        document.getElementById('cuenta-titulo').value = cuenta.sitio;
+        document.getElementById('cuenta-usuario-base').value = cuenta.usuario;
+        document.getElementById('cuenta-clave-base').value = cuenta.clave;
 
-                    <div class="modal-acciones">
-                        <button type="button" id="btn-cerrar-modal" class="btn-cancelar">Cancelar</button>
-                        <button type="submit" id="btn-guardar-credencial" class="btn-guardar">Guardar en Teléfono</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+        contenedorCampos.innerHTML = '';
+        cuenta.extras.forEach(ext => {
+            const nuevaFila = document.createElement('div');
+            nuevaFila.className = 'bloque-campo-dinamico';
+            // CORREGIDO: Comillas invertidas añadidas para envolver los inputs dinámicos en el editor
+            nuevaFila.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;"> 
+                    <input type="text" value="${ext.etiqueta}" required class="input-etiqueta" style="width:75%; padding:5px;"> 
+                    <button type="button" class="btn-eliminar-fila" onclick="this.parentElement.parentElement.remove()" style="margin:0; width:auto; padding:0 5px;">❌</button> 
+                </div> 
+                <input type="text" value="${ext.valor}" required class="input-valor">
+            `;
+            contenedorCampos.appendChild(nuevaFila);
+        });
+        modalCuenta.style.display = 'flex';
+    };
+}
 
-    <script src="app.js"></script>
-</body>
-</html>
+// ELIMINAR INDIVIDUALMENTE DE INDEXEDDB
+// INSTRUCCIÓN FÍSICA PARA ELIMINAR LA CUENTA DE INDEXEDDB (Corregido)
+function eliminarCuentaCredencial(id) {
+    // Alerta nativa que frena la pantalla por seguridad
+    if (confirm("⚠️ ¿Estás seguro de que quieres eliminar esta contraseña? Esta acción no se puede deshacer.")) {
+        
+        // Abrimos la base de datos en modo escritura
+        const transaccion = db.transaction(['credenciales'], 'readwrite');
+        const almacen = transaccion.objectStore('credenciales');
+        
+        // Le damos la orden de borrar usando el ID único de la tarjeta
+        const solicitudEliminar = almacen.delete(id);
+
+        solicitudEliminar.onsuccess = () => {
+            alert("¡Cuenta eliminada con éxito del teléfono!");
+            cargarContrasenasOoffline(); // <--- Redibuja la lista al instante sin la tarjeta
+        };
+
+        solicitudEliminar.onerror = (e) => {
+            console.error("Error al borrar en IndexedDB:", e.target.error);
+            alert("Hubo un error físico al intentar borrar la cuenta.");
+        };
+    }
+}
+
+// INICIALIZACIÓN MODO OSCURO / CLARO LOCAL STORAGE
+function initModoOscuroClaro() {
+    const btnTema = document.getElementById('btn-tema');
+    if (btnTema) {
+        const temaGuardado = localStorage.getItem('tema');
+        if (temaGuardado === 'claro') {
+            document.body.classList.add('modo-claro');
+        }
+        btnTema.addEventListener('click', () => {
+            document.body.classList.toggle('modo-claro');
+            if (document.body.classList.contains('modo-claro')) {
+                localStorage.setItem('tema', 'claro');
+            } else {
+                localStorage.setItem('tema', 'oscuro');
+            }
+        });
+    }
+}
