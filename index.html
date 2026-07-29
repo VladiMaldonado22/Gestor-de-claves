@@ -113,6 +113,20 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <!-- NUEVO CARTEL DE BORRADO SEGURO PROPIO (Sin alertas de sistema) -->
+    <div id="modal-confirmar-borrar" class="modal" style="display: none; z-index: 200;">
+        <div class="modal-contenido" style="text-align: center;">
+            <h3 style="color: #e74c3c; margin-bottom: 15px;">⚠️ ¿Eliminar Contraseña?</h3>
+            <p style="font-size: 0.9rem; color: var(--texto-secundario); margin-bottom: 20px;">
+                Esta acción borrará los datos permanentemente de tu teléfono y no se puede deshacer.
+            </p>
+            <div class="modal-acciones">
+                <button type="button" id="btn-cancelar-borrar" class="btn-secundario" style="margin:0;">Volver</button>
+                <button type="button" id="btn-aceptar-borrar" class="btn-cancelar" style="margin:0; background-color: #e74c3c;">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=1"></script>
 </body>
 </html>
