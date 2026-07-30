@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initPestanasConfiguracion();   
     initControlesGenerador();         
     ejecutarGeneradorCompleto(); 
+    initBotonCopiarGeneradorCorregido();
 });
 
 function initBaseDatos() {
@@ -168,11 +169,18 @@ function initBotonesBorrarPersonalizado() {
 }
 
 function initModoOscuroClaro() {
-    const b = document.getElementById('btn-tema');
-    if (b) {
-        if (localStorage.getItem('tema') === 'claro') document.body.classList.add('modo-claro');
-        b.onclick = () => { document.body.classList.toggle('modo-claro'); localStorage.setItem('tema', document.body.classList.contains('modo-claro') ? 'claro' : 'oscuro'); };
-    }
+    const btnLogin = document.getElementById('btn-tema-login');
+    const btnPrincipal = document.getElementById('btn-tema-principal');
+    
+    if (localStorage.getItem('tema') === 'claro') document.body.classList.add('modo-claro');
+
+    const alternarTema = () => {
+        document.body.classList.toggle('modo-claro');
+        localStorage.setItem('tema', document.body.classList.contains('modo-claro') ? 'claro' : 'oscuro');
+    };
+
+    if (btnLogin) btnLogin.onclick = alternarTema;
+    if (btnPrincipal) btnPrincipal.onclick = alternarTema;
 }
 
 function initOjoPasswordLogin() {
@@ -544,4 +552,34 @@ function procesarActualizacionClaveFisica(claveViejaEscrita, claveNuevaConfirmad
         console.error("Error al actualizar la clave en IndexedDB:", e.target.error);
         alert("Hubo un error físico al intentar guardar la nueva clave.");
     };
+}
+
+// NUEVA FUNCIÓN PARA MOSTRAR EL CARTEL PROPIO EN EL IPHONE
+function mostrarNotificacionWeb(mensaje) {
+    const cartel = document.getElementById('notificacion-flotante');
+    if (cartel) {
+        cartel.innerText = mensaje;
+        cartel.style.display = 'block';
+        
+        // El cartel flota en la pantalla durante 2 segundos y se esconde solo
+        setTimeout(() => {
+            cartel.style.display = 'none';
+        }, 2000);
+    }
+}
+
+// REEMPLAZO DEL BOTÓN COPIAR (Quita el alert viejo del sistema)
+function initBotonCopiarGeneradorCorregido() {
+    const btnCopiarGen = document.getElementById('btn-copiar-generada');
+    if (btnCopiarGen) {
+        btnCopiarGen.onclick = () => {
+            const inputPass = document.getElementById('pass-generada');
+            if (inputPass && inputPass.value !== "Selecciona opciones") {
+                navigator.clipboard.writeText(inputPass.value).then(() => {
+                    // LLAMAMOS A NUESTRO CARTEL PROPIO (Adiós a suprimir alertas)
+                    mostrarNotificacionWeb("¡Contraseña copiada con éxito! 📋");
+                });
+            }
+        };
+    }
 }
