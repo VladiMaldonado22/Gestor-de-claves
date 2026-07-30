@@ -139,7 +139,7 @@ body.modo-claro .lista-contenedor::-webkit-scrollbar-thumb:hover {
 /* Modal más grande exclusivo para configuraciones */
 .modal-contenido-config {
     background: var(--fondo-tarjeta);
-    padding: 25px;
+    padding: 11px;
     border-radius: 20px;
     width: 100%;
     max-width: 410px;
@@ -320,7 +320,6 @@ body.modo-claro .lista-contenedor::-webkit-scrollbar-thumb:hover {
 
 /* CORRECCIÓN BOTÓN INTERNO: Hace que el botón de la luna se mueva junto con el recuadro */
 .btn-tema-interno {
-    position: absolute;
     top: 20px;
     left: 25px;
     width: 40px;
@@ -336,4 +335,22 @@ body.modo-claro .lista-contenedor::-webkit-scrollbar-thumb:hover {
     align-items: center;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     z-index: 10;
+}
+
+/* ELIMINA EL OJO NATIVO DE CONTRASEÑA EN IPHONE, SAFARI Y CHROME */
+input::-webkit-contacts-auto-fill-button, 
+input::-webkit-credentials-auto-fill-button {
+    position: absolute;
+    right: 0;
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none;
+}
+
+/* Regla extra específica para navegadores basados en Microsoft o Chrome */
+input::-ms-reveal, 
+input::-ms-clear {
+    display: none !important;
+    width: 0;
+    height: 0;
 }
