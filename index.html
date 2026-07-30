@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi caja fuerte</title>
-    <link rel="stylesheet" href="style.css?v=2">
+    <title>Caja Fuerte</title>
+    <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
-    <!-- BOTÓN FLOTANTE MODO OSCURO / CLARO -->
     <button id="btn-tema" class="btn-tema-flotante">🌓</button>
 
     <!-- PANTALLA DE CONFIGURACIÓN INICIAL -->
@@ -18,49 +17,25 @@
             <h1>Crea tu caja fuerte</h1>
             <p>Tus contraseñas se guardarán de forma <strong>100% local e ilimitada</strong>.</p>
         </div>
-
         <form id="formulario-inicial">
-            <div class="grupo-campo">
-                <label for="clave-maestra">Contraseña maestra nueva</label>
-                <input type="password" id="clave-maestra" placeholder="Crea una clave segura..." required>
-            </div>
-            <div class="grupo-campo">
-                <label for="confirmar-clave">Confirmar contraseña maestra</label>
-                <input type="password" id="confirmar-clave" placeholder="Repite tu clave..." required>
-            </div>
-            <div class="alerta-advertencia">
-                ⚠️ <strong>Atención:</strong> Si olvidas esta contraseña maestra, no hay servidor de recuperación.
-            </div>
-            <div class="grupo-campo">
-                <label for="pista-clave">Pista de recuperación (Opcional)</label>
-                <input type="text" id="pista-clave" placeholder="Ej: El nombre de mi primer perro...">
-            </div>
+            <div class="grupo-campo"><label for="clave-maestra">Contraseña nueva</label><input type="password" id="clave-maestra" placeholder="Crea una clave segura..." required></div>
+            <div class="grupo-campo"><label for="confirmar-clave">Confirmar contraseña</label><input type="password" id="confirmar-clave" placeholder="Repite tu clave..." required></div>
+            <div class="alerta-advertencia">⚠️ <strong>Atención:</strong> No hay servidor de recuperación.</div>
+            <div class="grupo-campo"><label for="pista-clave">Pista de recuperación (Opcional)</label><input type="text" id="pista-clave" placeholder="Ej: Nombre de mi primer perro..."></div>
             <button type="submit" id="btn-crear">Comenzar a guardar</button>
         </form>
     </div>
 
     <!-- PANTALLA DE LOGIN: INICIAR SESIÓN -->
     <div id="pantalla-login" class="contenedor-seguro" style="display: none;">
-        <div class="encabezado">
-            <div class="icono-candado">🔒</div>
-            <h1>Caja fuerte bloqueada</h1>
-            <p>Introduce tu contraseña maestra para entrar.</p>
-        </div>
-
+        <div class="encabezado"><div class="icono-candado">🔒</div><h1>Caja Fuerte</h1></div>
         <form id="formulario-login">
             <div class="grupo-campo">
-                <label for="clave-login">Contraseña maestra:</label>
-                <input type="password" id="clave-login" placeholder="Ingresa tu contraseña..." required>
+                <label for="clave-login">Por favor ingrese su contraseña:</label>
+                <div class="contenedor-password-ojo"><input type="password" id="clave-login" placeholder="Contraseña..." required><span id="btn-ojo-login" class="icono-ojo">👁️</span></div>
             </div>
-
-            <div id="contenedor-pista" class="alerta-pista" style="display: none;">
-                💡 <strong>Pista de ayuda:</strong> <span id="texto-pista-guardada"></span>
-            </div>
-
-            <div id="aviso-bloqueo" class="alerta-advertencia" style="display: none; background-color: #3a1a1a;">
-                ⏳ Demasiados intentos. App bloqueada por <span id="segundos-bloqueo">30</span> segundos.
-            </div>
-
+            <div id="contenedor-pista" class="alerta-pista" style="display: none;">💡 <strong>Pista de ayuda:</strong> <span id="texto-pista-guardada"></span></div>
+            <div id="aviso-bloqueo" class="alerta-advertencia" style="display: none; background-color: #3a1a1a;">⏳ App bloqueada por <span id="segundos-bloqueo">30</span> segundos.</div>
             <button type="submit" id="btn-entrar">Desbloquear</button>
             <button type="button" id="btn-reestablecer" class="btn-cancelar" style="display: none; margin-top: 15px;">⚠️ Borrar App y Reestablecer</button>
         </form>
@@ -68,65 +43,112 @@
 
     <!-- PANTALLA PRINCIPAL: LISTA -->
     <div id="pantalla-principal" class="contenedor-seguro" style="display: none;">
-        <div class="encabezado-principal">
-            <h2>🔑 Mis Contraseñas</h2>
-            <button id="btn-abrir-modal" class="btn-flotante">+</button>
-        </div>
-
+        <div class="encabezado-principal"><h2>🔑 Mis Contraseñas</h2><button id="btn-abrir-modal" class="btn-flotante">+</button></div>
         <input type="text" id="buscador-claves" placeholder="Buscar cuenta (Ej: Facebook)..." class="input-busqueda">
-
         <div id="lista-credenciales" class="lista-contenedor"></div>
+        <div class="contenedor-pie-pagina"><button id="btn-abrir-config" class="btn-configuracion">⚙️ Configuraciones</button></div>
 
-        <!-- Ventana Modal emergente para añadir cuentas -->
+        <!-- Ventana Modal para añadir/editar cuentas -->
         <div id="modal-cuenta" class="modal" style="display: none;">
             <div class="modal-contenido">
                 <h3 id="modal-titulo">Añadir Nueva Cuenta</h3>
                 <form id="formulario-credencial">
                     <input type="hidden" id="cuenta-id-edicion">
-                    
-                    <div class="grupo-campo">
-                        <label for="cuenta-titulo">Nombre de la App / Sitio</label>
-                        <input type="text" id="cuenta-titulo" placeholder="Ej: Facebook, Netflix..." required>
-                    </div>
-
-                    <div class="grupo-campo">
-                        <label>Usuario / Correo Electrónico</label>
-                        <input type="text" id="cuenta-usuario-base" placeholder="Tu correo o nombre de usuario" required>
-                    </div>
-                    <div class="grupo-campo">
-                        <label>Contraseña</label>
-                        <input type="text" id="cuenta-clave-base" placeholder="Tu contraseña de esa app" required>
-                    </div>
-
-                    <!-- Contenedor exclusivo para campos EXTRAS -->
-                    <label style="font-size: 0.75rem; margin-top: 15px; display:block;">Campos Adicionales Opcionales</label>
-                    <div id="contenedor-campos-dinamicos"></div>
-
-                    <button type="button" id="btn-agregar-campo" class="btn-secundario">➕ Añadir Dato Extra (PIN, Código, etc)</button>
-
-                    <div class="modal-acciones">
-                        <button type="button" id="btn-cerrar-modal" class="btn-cancelar">Cancelar</button>
-                        <button type="submit" id="btn-guardar-credencial" class="btn-guardar">Guardar en Teléfono</button>
-                    </div>
+                    <div class="grupo-campo"><label for="cuenta-titulo">Nombre de la App / Sitio</label><input type="text" id="cuenta-titulo" placeholder="Ej: Facebook, Netflix..." required></div>
+                    <div class="grupo-campo"><label>Usuario / Correo Electrónico</label><input type="text" id="cuenta-usuario-base" placeholder="Tu correo o nombre de usuario" required></div>
+                    <div class="grupo-campo"><label>Contraseña</label><div class="contenedor-password-ojo"><input type="password" id="cuenta-clave-base" placeholder="Tu contraseña" required><span id="btn-ojo-credencial" class="icono-ojo">👁️</span></div></div>
+                    <div class="modal-acciones"><button type="button" id="btn-cerrar-modal" class="btn-cancelar">Cancelar</button><button type="submit" id="btn-guardar-credencial" class="btn-guardar">Guardar en Teléfono</button></div>
                 </form>
             </div>
         </div>
-    </div>
 
-    <!-- NUEVO CARTEL DE BORRADO SEGURO PROPIO (Sin alertas de sistema) -->
-    <div id="modal-confirmar-borrar" class="modal" style="display: none; z-index: 200;">
-        <div class="modal-contenido" style="text-align: center;">
-            <h3 style="color: #e74c3c; margin-bottom: 15px;">⚠️ ¿Eliminar Contraseña?</h3>
-            <p style="font-size: 0.9rem; color: var(--texto-secundario); margin-bottom: 20px;">
-                Esta acción borrará los datos permanentemente de tu teléfono y no se puede deshacer.
-            </p>
-            <div class="modal-acciones">
-                <button type="button" id="btn-cancelar-borrar" class="btn-secundario" style="margin:0;">Volver</button>
-                <button type="button" id="btn-aceptar-borrar" class="btn-cancelar" style="margin:0; background-color: #e74c3c;">Eliminar</button>
+        <!-- VENTANA MODAL AVANZADA DE CONFIGURACIONES (Puntos 1, 2, 3 y 4) -->
+        <div id="modal-configuraciones" class="modal" style="display: none; z-index: 150;">
+            <div class="modal-contenido-config">
+                <!-- Botón de Cerrar permanente arriba -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>⚙️ Menú de Ajustes</h3>
+                    <button type="button" id="btn-cerrar-config" class="btn-cancelar" style="width:auto; margin:0; padding:5px 12px; font-size:0.85rem;">X</button>
+                </div>
+                
+                <!-- Barra de pestañas interactivas -->
+                <div class="barra-pestanas">
+                    <button class="tab-btn activo" data-tab="tab-datos">📊 DATOS</button>
+                    <button class="tab-btn" data-tab="tab-otro">🛠️ OTRO</button>
+                    <button class="tab-btn" data-tab="tab-config">🔒 CONFIG</button>
+                    <button class="tab-btn" data-tab="tab-acerca">📝 ACERCA</button>
+                </div>
+
+                <!-- CONTENIDO PESTAÑA 1: DATOS -->
+                <div id="tab-datos" class="tab-contenido activo">
+                    <h4>Respaldo Local</h4>
+                    <p class="txt-ayuda-config">Guarda una copia de seguridad de tu base de datos.</p>
+                    <div class="grupo-botones-vertical">
+                        <button id="btn-exportar-bd" class="btn-opcion-config">💾 Exportar Base de Datos (.json)</button>
+                        <button id="btn-exportar-csv" class="btn-opcion-config">📊 Exportar a Excel (.csv)</button>
+                        <button id="btn-exportar-pdf" class="btn-opcion-config">🖨️ Exportar a PDF / Imprimir</button>
+                    </div>
+                </div>
+
+                <!-- CONTENIDO PESTAÑA 2: OTRO (Generador de claves) -->
+                <div id="tab-otro" class="tab-contenido">
+                    <h4>Generador de Contraseñas</h4>
+                    <div class="box-generador">
+                        <div class="contenedor-password-ojo">
+                            <input type="text" id="pass-generada" readonly value="Presiona Regenerar">
+                            <span id="btn-copiar-generada" class="icono-ojo" style="right:45px;">📋</span>
+                            <span id="btn-regen-pass" class="icono-ojo">🔄</span>
+                        </div>
+                        <div class="barra-fuerza"><div id="fuerza-indicador"></div></div>
+                        <p id="fuerza-texto" style="font-size:0.75rem; text-align:right; margin-top:2px; color:var(--texto-secundario);">Seguridad: Inestable</p>
+                    </div>
+                    <div class="opciones-check-grid">
+                        <label class="check-container"><input type="checkbox" id="chk-mayus" checked> Mayúsculas (A-Z)</label>
+                        <label class="check-container"><input type="checkbox" id="chk-minus" checked> Minúsculas (a-z)</label>
+                        <label class="check-container"><input type="checkbox" id="chk-num" checked> Números (0-9)</label>
+                        <label class="check-container"><input type="checkbox" id="chk-sim" checked> Símbolos (!@#$)</label>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <label style="color:var(--texto-principal);">Longitud: <span id="longitud-val">12</span> caracteres</label>
+                        <input type="range" id="range-longitud" min="6" max="32" value="12" style="margin-top:5px;">
+                    </div>
+                </div>
+
+                <!-- CONTENIDO PESTAÑA 3: CONFIGURACIONES -->
+                <div id="tab-config" class="tab-contenido">
+                    <h4>Cambiar Contraseña</h4>
+                    <form id="form-cambiar-maestra">
+                        <div class="grupo-campo"><label>Contraseña Actual</label><input type="password" id="change-pass-vieja" required placeholder="Tu contraseña actual"></div>
+                        <div class="grupo-campo"><label>Contraseña Nueva</label><input type="password" id="change-pass-nueva" required placeholder="Mínimo 6 caracteres"></div>
+                        <div class="grupo-campo"><label>Repetir Contraseña Nueva</label><input type="password" id="change-pass-repetir" required placeholder="Confirma la nueva clave"></div>
+                        <button type="submit" style="background-color: var(--azul-electrico); margin-top:5px;">Actualizar Contraseña</button>
+                    </form>
+                </div>
+
+                <!-- CONTENIDO PESTAÑA 4: ACERCA -->
+                <div id="tab-acerca" class="tab-contenido">
+                    <h4>Acerca de Caja Fuerte</h4>
+                    <div class="box-acerca">
+                        <p><strong>Versión:</strong> 1.0 (Edición Premium Offline)</p>
+                        <p><strong>Autor:</strong> Vladimir Maldonado</p>
+                        <p style="margin-top: 10px; line-height: 1.4; color: var(--texto-secundario);">
+                            ⚠️ <strong>Recomendación de seguridad:</strong> Al ser una aplicación 100% local, recuerda exportar un archivo CSV o base de datos al menos una vez al mes para no perder tu información si cambias o extravías el teléfono.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <script src="app.js?v=2"></script>
+    <!-- CARTEL DE BORRADO SEGURO PROPIO -->
+    <div id="modal-confirmar-borrar" class="modal" style="display: none; z-index: 200;">
+        <div class="modal-contenido" style="text-align: center;">
+            <h3 style="color: #e74c3c; margin-bottom: 15px;">⚠️ ¿Eliminar Contraseña?</h3>
+            <p style="font-size: 0.9rem; color: var(--texto-secundario); margin-bottom: 20px;">Esta acción borrará los datos permanentemente.</p>
+            <div class="modal-acciones"><button type="button" id="btn-cancelar-borrar" class="btn-secundario" style="margin:0;">Volver</button><button type="button" id="btn-aceptar-borrar" class="btn-cancelar" style="margin:0; background-color: #e74c3c;">Eliminar</button></div>
+        </div>
+    </div>
+
+    <script src="app.js?v=5"></script>
 </body>
 </html>
