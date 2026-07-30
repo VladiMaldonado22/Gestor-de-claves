@@ -26,7 +26,7 @@ body.modo-claro {
 body { background-color: var(--fondo-oscuro); color: var(--texto-principal); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
 
 .btn-tema-flotante {
-    position: fixed; top: 15px; left: 25px; width: 40px; height: 40px; border-radius: 50%;
+    top: 15px; left: 25px; width: 40px; height: 40px; border-radius: 50%;
     background-color: var(--fondo-tarjeta); font-size: 1.1rem; cursor: pointer;
     display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 1000;
 }
@@ -316,4 +316,24 @@ body.modo-claro .lista-contenedor::-webkit-scrollbar-thumb:hover {
     display: flex;
     align-items: center;
     line-height: 1;
+}
+
+/* CORRECCIÓN BOTÓN INTERNO: Hace que el botón de la luna se mueva junto con el recuadro */
+.btn-tema-interno {
+    position: absolute;
+    top: 20px;
+    left: 25px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--fondo-inputs);
+    border: 1px solid var(--borde-inputs);
+    color: var(--texto-principal);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 10;
 }
