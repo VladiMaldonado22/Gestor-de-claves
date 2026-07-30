@@ -1,9 +1,8 @@
 :root {
-    /* COLORES MODO OSCURO (Por defecto) */
     --fondo-oscuro: #121212;
     --fondo-tarjeta: #1e1e1e;
     --fondo-inputs: #121212;
-    --azul-electrico: #2ecc71; /* Verde Esmeralda Premium */
+    --azul-electrico: #2ecc71; 
     --azul-hover: #27ae60;
     --texto-principal: #eeeeee;
     --texto-secundario: #95a5a6;
@@ -11,7 +10,6 @@
     --borde-inputs: #333;
 }
 
-/* COLORES MODO CLARO (Se activan con el botón) */
 body.modo-claro {
     --fondo-oscuro: #f5f6fa;
     --fondo-tarjeta: #ffffff;
@@ -27,47 +25,38 @@ body.modo-claro {
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; transition: background-color 0.3s ease, color 0.3s ease; }
 body { background-color: var(--fondo-oscuro); color: var(--texto-principal); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
 
-/* Botón flotante para el tema */
 .btn-tema-flotante {
-    position: fixed;
-    top: 15px;
-    left: 25px; /* Se queda fijo arriba a la izquierda sin estorbar al botón + */
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: var(--fondo-tarjeta);
-    font-size: 1.1rem;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    z-index: 1000;
+    position: fixed; top: 15px; left: 25px; width: 40px; height: 40px; border-radius: 50%;
+    background-color: var(--fondo-tarjeta); font-size: 1.1rem; cursor: pointer;
+    display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 1000;
 }
 
 .contenedor-seguro { background-color: var(--fondo-tarjeta); width: 100%; max-width: 420px; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); border: 1px solid var(--borde-tarjeta); }
 .encabezado { text-align: center; margin-bottom: 25px; }
 .icono-candado { font-size: 3.5rem; margin-bottom: 10px; }
 h1, h2 { font-size: 1.6rem; color: var(--texto-principal); }
-
 .encabezado-principal { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+
 .btn-flotante { 
-    width: 45px; height: 45px; border-radius: 50%; font-size: 1.8rem; 
+    width: 45px; height: 45px; border-radius: 50%; font-size: 1.7rem; 
     background-color: var(--azul-electrico); color: white; border: none; cursor: pointer;
-    display: flex; justify-content: center; align-items: center;
-    padding-bottom: 19px;       /*signo + blanco del circulo verde*/
+    display: flex; justify-content: center; align-items: center; padding-bottom: 19px;       
 }
 .btn-flotante:hover { background-color: var(--azul-hover); }
-
 .grupo-campo { margin-bottom: 15px; }
-.bloque-campo-dinamico {
-    background: var(--fondo-inputs);
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 12px;
-    border: 1px dashed var(--borde-inputs);
+
+/* CORREGIDO: Bloque de botones general estructurado correctamente en vertical */
+button { 
+    width: 100%; 
+    background-color: var(--azul-electrico); 
+    color: #fff; 
+    border: none; 
+    padding: 12px; 
+    border-radius: 10px; 
+    font-weight: 600; 
+    cursor: pointer; 
+    margin-top: 10px; 
 }
-.bloque-campo-dinamico input { margin-top: 5px; }
 
 label { display: block; font-size: 0.85rem; color: var(--azul-electrico); margin-bottom: 6px; font-weight: 600; }
 input { width: 100%; background-color: var(--fondo-inputs); border: 1px solid var(--borde-inputs); padding: 12px; border-radius: 10px; color: var(--texto-principal); font-size: 1rem; }
@@ -76,11 +65,9 @@ small { display: block; color: var(--texto-secundario); font-size: 0.75rem; marg
 
 .alerta-advertencia { background-color: #3a1a1a; border: 1px solid #e74c3c; padding: 12px; border-radius: 10px; font-size: 0.8rem; margin-bottom: 20px; color: #f7d7d7; }
 body.modo-claro .alerta-advertencia { background-color: #fceade; border: 1px solid #e67e22; color: #d35400; }
-
 .alerta-pista { background-color: #1a252f; border: 1px solid #3498db; padding: 12px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 20px; color: #d2f4f5; }
 body.modo-claro .alerta-pista { background-color: #e8f4f8; border: 1px solid #2980b9; color: #2c3e50; }
 
-button { width: 100%; background-color: var(--azul-electrico); color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; margin-top: 10px; }
 .btn-secundario { background: #34495e; color: #fff; font-size: 0.85rem; }
 body.modo-claro .btn-secundario { background: #bdc3c7; color: #2c3e50; }
 .btn-cancelar { background: #c0392b; color: #fff; }
@@ -93,27 +80,240 @@ body.modo-claro .btn-secundario { background: #bdc3c7; color: #2c3e50; }
 body.modo-claro .modal { background: rgba(0,0,0,0.5); }
 .modal-contenido { background: var(--fondo-tarjeta); padding: 25px; border-radius: 20px; width: 100%; max-width: 390px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--borde-tarjeta); }
 .modal-acciones { display: flex; gap: 10px; margin-top: 15px; }
-.btn-eliminar-fila { background: none; border: none; cursor: pointer; font-size: 1rem; }
 
-/* DISEÑO EXCLUSIVO Y PREMIUM PARA LA CRUZ DE BORRAR CAMPOS DINÁMICOS */
-.bloque-campo-dinamico button {
-    width: 32px !important;
-    height: 32px !important;
-    min-height: 32px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    background-color: #c0392b !important; /* Rojo elegante a tono con el tacho de basura */
-    color: #ffffff !important;
-    border-radius: 8px !important; /* Bordes suavemente redondeados en vez de un óvalo */
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    font-size: 0.85rem !important;
-    cursor: pointer !important;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+.contenedor-password-ojo { position: relative; width: 100%; display: flex; align-items: center; }
+.contenedor-password-ojo input { padding-right: 45px !important; }
+.icono-ojo { position: absolute; right: 15px; cursor: pointer; font-size: 1.2rem; user-select: none; display: flex; align-items: center; justify-content: center; z-index: 10; }
+
+/* Limita el alto de la lista y personaliza la barra de scroll para que pase desapercibida */
+.lista-contenedor {
+    max-height: 380px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    padding-right: 8px; /* Un poquito más de espacio para que no se pegue a los botones */
+    
+    /* Regla moderna para navegadores como Firefox y Safari móvil */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
-/* Efecto de toque para el botón de la cruz */
-.bloque-campo-dinamico button:hover {
-    background-color: #e74c3c !important; /* Rojo un poco más brillante al pasar el mouse */
+/* Cambia el color de la barra en el Modo Claro de forma automática */
+body.modo-claro .lista-contenedor {
+    scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+/* --- DISEÑO EXCLUSIVO DE LA BARRA PARA GOOGLE CHROME, SAFARI Y TU CELULAR (Webkit) --- */
+
+/* 1. Define el ancho total del carril de la barra (la hace más finita) */
+.lista-contenedor::-webkit-scrollbar {
+    width: 6px; 
+}
+
+/* 2. El fondo del carril (lo dejamos invisible/transparente para que no llame la atención) */
+.lista-contenedor::-webkit-scrollbar-track {
+    background: transparent; 
+}
+
+/* 3. El bastón/tirador que se mueve con el dedo (Gris sutil y bordes redondeados) */
+.lista-contenedor::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.15); /* En oscuro: blanco con transparencia */
+    border-radius: 10px;
+    transition: background-color 0.3s ease;
+}
+
+/* 4. Cambia el color del bastón automáticamente cuando pasas a Modo Claro */
+body.modo-claro .lista-contenedor::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.15); /* En claro: negro con transparencia sutil */
+}
+
+/* Efecto opcional: Se destaca un poquito más solo cuando pasas el mouse por encima */
+.lista-contenedor::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+body.modo-claro .lista-contenedor::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* --- DISEÑO PREMIUM DEL MENÚ DE CONFIGURACIONES AVANZADO --- */
+
+/* Modal más grande exclusivo para configuraciones */
+.modal-contenido-config {
+    background: var(--fondo-tarjeta);
+    padding: 25px;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 410px;
+    max-height: 95vh;
+    overflow-y: auto;
+    border: 1px solid var(--borde-tarjeta);
+}
+
+/* Barra horizontal de pestañas */
+.barra-pestanas {
+    display: flex;
+    gap: 5px;
+    border-bottom: 1px solid var(--borde-inputs);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    overflow-x: auto; /* Permite scroll horizontal si las pestañas son grandes en celulares chicos */
+}
+
+/* Botones de las pestañas */
+.tab-btn {
+    background: none !important;
+    color: var(--texto-secundario) !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+    cursor: pointer;
+    width: auto !important;
+    margin: 0 !important;
+    border: 1px solid transparent !important;
+}
+
+.tab-btn.activo {
+    background-color: var(--fondo-inputs) !important;
+    color: var(--azul-electrico) !important;
+    border: 1px solid var(--borde-tarjeta) !important;
+}
+
+/* Lógica de ocultado inicial de contenidos */
+.tab-contenido {
+    display: none;
+    animation: fadeInTab 0.3s ease;
+}
+
+.tab-contenido.activo {
+    display: block;
+}
+
+.tab-contenido h4 {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    color: #fff;
+}
+
+.txt-ayuda-config {
+    font-size: 0.8rem;
+    color: var(--texto-secundario);
+    margin-bottom: 15px;
+}
+
+/* Grupo de botones para la pestaña de Datos */
+.grupo-botones-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-opcion-config {
+    background-color: var(--fondo-inputs) !important;
+    color: var(--texto-principal) !important;
+    border: 1px solid var(--borde-inputs) !important;
+    text-align: left !important;
+    padding: 14px !important;
+    font-size: 0.9rem !important;
+    margin: 0 !important;
+}
+
+.btn-opcion-config:hover {
+    border-color: var(--azul-electrico) !important;
+}
+
+/* Cuadro contenedor del Generador de Claves */
+.box-generador {
+    background-color: var(--fondo-inputs);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid var(--borde-inputs);
+    margin-bottom: 15px;
+}
+
+.box-generador input {
+    font-family: 'Courier New', Courier, monospace; /* Tipografía para ver bien símbolos */
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* Barra dinámica de fuerza de contraseña */
+.barra-fuerza {
+    width: 100%;
+    height: 5px;
+    background-color: #252525;
+    border-radius: 3px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+#fuerza-indicador {
+    width: 25%; /* Esto cambiará con JS de 25% a 100% */
+    height: 100%;
+    background-color: #e74c3c; /* Cambiará de Rojo -> Naranja -> Amarillo -> Verde */
+    transition: all 0.3s ease;
+}
+
+/* Cuadrícula de checkboxes */
+.opciones-check-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.check-container {
+    font-size: 0.85rem;
+    color: var(--texto-principal);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.check-container input {
+    width: auto !important;
+    margin: 0 !important;
+    cursor: pointer;
+}
+
+/* Cuadro para la información del Autor */
+.box-acerca {
+    background-color: var(--fondo-inputs);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid var(--borde-inputs);
+    font-size: 0.9rem;
+}
+
+.box-acerca p {
+    margin-bottom: 8px;
+}
+
+@keyframes fadeInTab {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* CORRECCIÓN: Asegura espacio para los dos botones (copiar y refrescar) */
+.box-generador .contenedor-password-ojo input {
+    padding-right: 80px !important; /* Deja un hueco de 80px a la derecha para los iconos */
+    text-overflow: ellipsis; /* Si la clave es muy larga (32 caracteres), pone ... al final para no desbordar */
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+/* Acomodamos los iconos del generador para que no se encimen */
+#btn-copiar-generada {
+    right: 48px !important; /* Corremos el portapapeles un poco a la izquierda */
+}
+
+#btn-regen-pass {
+    right: 15px !important; /* El botón de refrescar se queda en la esquina derecha */
+}
+
+/* Centrado perfecto de los nuevos logotipos de las marcas */
+.tarjeta-cuenta h4 {
+    display: flex;
+    align-items: center;
+    line-height: 1;
 }
